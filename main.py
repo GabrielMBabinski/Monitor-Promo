@@ -13,11 +13,11 @@ SESSION_STRING = os.environ['SESSION_STRING']
 # IMPORTANTE: Use o @username do grupo ou o link de convite. 
 # O nome "Poison indicações e promoções" não funciona aqui, precisa ser o ID ou Username (ex: 'poison_promos')
 GRUPO_ALVO = 'PoisonPromos' 
-PRODUTO = 'monitor' # Deixe sempre em minúsculo
-PRECO_MAXIMO = 5000 
+PRODUTO = 'filtro de linha' # Deixe sempre em minúsculo
+PRECO_MAXIMO = 50 
 # --------------------------
 
-tempo_limite = datetime.now(timezone.utc) - timedelta(hours=5)
+tempo_limite = datetime.now(timezone.utc) - timedelta(hours=10)
 
 def buscar_promocoes():
     client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
