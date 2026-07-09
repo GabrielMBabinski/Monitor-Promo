@@ -14,7 +14,7 @@ SESSION_STRING = os.environ['SESSION_STRING']
 # O nome "Poison indicações e promoções" não funciona aqui, precisa ser o ID ou Username (ex: 'poison_promos')
 GRUPO_ALVO = 'PoisonPromos' 
 PRODUTO = 'monitor' # Deixe sempre em minúsculo
-PRECO_MAXIMO = 5.000 
+PRECO_MAXIMO = 5000 
 # --------------------------
 
 tempo_limite = datetime.now(timezone.utc) - timedelta(minutes=15)
