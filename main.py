@@ -26,7 +26,11 @@ def buscar_promocoes():
     
     with client:
 
-        client.send_message(-5140734700, "✅ O script rodou no GitHub e conseguiu acessar o grupo!")
+        # --- TESTE DE CONEXÃO DO BOT ---
+        BOT_TOKEN = os.environ['BOT_TOKEN']
+        meu_id = client.get_me().id 
+        msg_teste = urllib.parse.quote("🤖 Olá! Seu bot está online e vasculhando o grupo!")
+        urllib.request.urlopen(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage?chat_id={meu_id}&text={msg_teste}")
         # Pega as últimas 30 mensagens do grupo
         for message in client.iter_messages(GRUPO_ALVO, limit=30):
             # Ignora mensagens mais antigas que 15 minutos para não mandar alertas duplicados
