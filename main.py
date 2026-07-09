@@ -63,8 +63,17 @@ def buscar_promocoes():
                                 f"*(Mensagem extraída do grupo {GRUPO_ALVO})*"
                             )
                             
-                            # Envia a notificação para suas "Mensagens Salvas"
-                            client.send_message(-5140734700, alerta)
+                            # --- NOVO ENVIO PELO BOT OFICIAL ---
+                            # Puxa o token do bot com segurança
+                            BOT_TOKEN = os.environ['BOT_TOKEN']
+                            
+                            # O script descobre o seu ID pessoal automaticamente
+                            meu_id = client.get_me().id 
+                            
+                            # Prepara e dispara a notificação (Isso fará o celular apitar!)
+                            texto_formatado = urllib.parse.quote(alerta)
+                            url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage?chat_id={meu_id}&text={texto_formatado}&parse_mode=Markdown"
+                            urllib.request.urlopen(url)
 
 if __name__ == '__main__':
     buscar_promocoes()
