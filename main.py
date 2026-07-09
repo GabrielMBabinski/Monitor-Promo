@@ -5,9 +5,9 @@ from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
 
 # Variáveis seguras (Puxadas do GitHub Secrets)
-API_ID = int(os.environ['30551813'])
-API_HASH = os.environ['234a103396d97937096b7e3e1da0f5bb']
-SESSION_STRING = os.environ['1AZWarzgBu5y5kQSrZ6qAVpaDX02HPSOkAN0LcYoy0FGb0uXB4UeVtEMwh3gVWvvz438VGjvkaV6ih0xd7giNIsiPTMRHWFliuosNJzVxLfgdQCHGbu72U_Tos8aEA-jEOJNWqGOXvVdarLSJMgpsl82Irq-Yh2fgPpHocNmBh5UgKTdnOjCekinilZS68it4Du0AmfkaT5OMCndZZP8yF_mLixi81zU3i-9EVcFddF4JGh43_lKcj1qOZTKon_KXiTvnKBdOxKKbzNSKEtVkQlVpAW-v_kUMvv7nsRJY3h8ALUb2a_NTJdQR6TdqEyqsh60KjxJH1Ob1S3GLNR3vA3oUOQeYHBo=']
+API_ID = int(os.environ['API_ID'])
+API_HASH = os.environ['API_HASH']
+SESSION_STRING = os.environ['SESSION_STRING']
 
 # --- SUAS CONFIGURAÇÕES ---
 # IMPORTANTE: Use o @username do grupo ou o link de convite. 
