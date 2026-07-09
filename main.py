@@ -62,7 +62,7 @@ def buscar_promocoes():
                             )
                             
                             # Envia a notificação para suas "Mensagens Salvas"
-                            client.send_message('me', alerta)
+                            client.send_message(8532456470, alerta)
 
 if __name__ == '__main__':
     buscar_promocoes()
