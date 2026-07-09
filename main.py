@@ -17,7 +17,7 @@ PRODUTO = 'monitor' # Deixe sempre em minúsculo
 PRECO_MAXIMO = 5000 
 # --------------------------
 
-tempo_limite = datetime.now(timezone.utc) - timedelta(minutes=15)
+tempo_limite = datetime.now(timezone.utc) - timedelta(hours=5)
 
 def buscar_promocoes():
     client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
