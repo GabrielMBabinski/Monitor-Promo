@@ -23,6 +23,8 @@ def buscar_promocoes():
     client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
     
     with client:
+
+        client.send_message(-5140734700, "✅ O script rodou no GitHub e conseguiu acessar o grupo!")
         # Pega as últimas 30 mensagens do grupo
         for message in client.iter_messages(GRUPO_ALVO, limit=30):
             # Ignora mensagens mais antigas que 15 minutos para não mandar alertas duplicados
