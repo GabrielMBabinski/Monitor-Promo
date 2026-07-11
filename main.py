@@ -24,7 +24,7 @@ def carregar_lista_desejos(client):
     print(f"Buscando comandos no chat privado com ID: {meu_id}")
     
     # O bot lê o histórico do chat privado com VOCÊ (meu_id)
-    or msg in client.iter_messages('Monitordepromos99_bot', limit=50): 
+    for msg in client.iter_messages('Monitordepromos99_bot', limit=50): 
         if msg.text:
             print(f"-> Leu mensagem: '{msg.text}'") # Isso vai aparecer no log do GitHub
             txt = msg.text.lower()
