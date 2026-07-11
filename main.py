@@ -19,22 +19,24 @@ def enviar_msg_bot(meu_id, texto):
     urllib.request.urlopen(url)
 
 def carregar_lista_desejos(client):
-    # Dicionário: { 'nome_produto': preco_maximo }
     lista = {}
-    # Lê as últimas 50 mensagens do seu chat privado com o BOT para achar comandos
     meu_id = client.get_me().id
-    for msg in client.iter_messages(meu_id, limit=50, reverse=True):
+    # Aumentamos o limite para garantir que pegue o comando, mesmo que você tenha enviado há pouco tempo
+    for msg in client.iter_messages(meu_id, limit=10, reverse=True):
         if msg.text:
+            print(f"Lendo mensagem: {msg.text}") # Isso aparecerá nos logs do Actions
             txt = msg.text.lower()
             if txt.startswith('/add'):
-                # Exemplo: /add monitor 500
                 partes = txt.split()
                 if len(partes) >= 3:
-                    preco = float(partes[-1])
-                    nome = " ".join(partes[1:-1])
-                    lista[nome] = preco
+                    try:
+                        preco = float(partes[-1])
+                        nome = " ".join(partes[1:-1])
+                        lista[nome] = preco
+                        print(f"Produto adicionado: {nome} por {preco}")
+                    except ValueError:
+                        continue
             elif txt.startswith('/remove'):
-                # Exemplo: /remove monitor
                 nome = txt.replace('/remove', '').strip()
                 if nome in lista:
                     del lista[nome]
