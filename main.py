@@ -21,10 +21,12 @@ def enviar_msg_bot(meu_id, texto):
 def carregar_lista_desejos(client):
     lista = {}
     meu_id = client.get_me().id
-    # Aumentamos o limite para garantir que pegue o comando, mesmo que você tenha enviado há pouco tempo
-    for msg in client.iter_messages(meu_id, limit=10, reverse=True):
+    print(f"Buscando comandos no chat privado com ID: {meu_id}")
+    
+    # O bot lê o histórico do chat privado com VOCÊ (meu_id)
+    for msg in client.iter_messages(meu_id, limit=20, reverse=True):
         if msg.text:
-            print(f"Lendo mensagem: {msg.text}") # Isso aparecerá nos logs do Actions
+            print(f"-> Leu mensagem: '{msg.text}'") # Isso vai aparecer no log do GitHub
             txt = msg.text.lower()
             if txt.startswith('/add'):
                 partes = txt.split()
@@ -33,13 +35,9 @@ def carregar_lista_desejos(client):
                         preco = float(partes[-1])
                         nome = " ".join(partes[1:-1])
                         lista[nome] = preco
-                        print(f"Produto adicionado: {nome} por {preco}")
+                        print(f"   [OK] Adicionado: {nome} por {preco}")
                     except ValueError:
-                        continue
-            elif txt.startswith('/remove'):
-                nome = txt.replace('/remove', '').strip()
-                if nome in lista:
-                    del lista[nome]
+                        print("   [ERRO] Preço inválido.")
     return lista
 
 def buscar_promocoes():
