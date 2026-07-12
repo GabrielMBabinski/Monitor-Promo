@@ -19,37 +19,33 @@ def enviar_msg_bot(meu_id, texto):
     urllib.request.urlopen(url)
 
 def carregar_lista_desejos(client):
-    lista = {}
+    lista_adicoes = {} # Guarda tudo o que foi adicionado
+    lista_remocoes = [] # Guarda tudo o que foi pedido para remover
+    
     meu_id = client.get_me().id
     print(f"Buscando comandos no chat privado com ID: {meu_id}")
     
-    # Lemos do mais antigo para o mais recente para que o /remove 
-    # ocorra depois do /add na cronologia da lista
+    # 1. Lê tudo o que está no chat
     for msg in client.iter_messages('Monitordepromos99_bot', limit=50): 
         if msg.text:
             txt = msg.text.lower()
-            
             if txt.startswith('/add'):
                 partes = txt.split()
                 if len(partes) >= 3:
-                    try:
-                        preco = float(partes[-1])
-                        nome = " ".join(partes[1:-1])
-                        lista[nome] = preco
-                        print(f"   [OK] Adicionado: {nome} por {preco}")
-                    except ValueError:
-                        print("   [ERRO] Preço inválido.")
-            
-            # LÓGICA DE REMOÇÃO
+                    preco = float(partes[-1])
+                    nome = " ".join(partes[1:-1])
+                    lista_adicoes[nome] = preco
             elif txt.startswith('/remove'):
                 nome = txt.replace('/remove', '').strip()
-                if nome in lista:
-                    del lista[nome]
-                    print(f"   [OK] Removido: {nome}")
-                else:
-                    print(f"   [AVISO] Tentativa de remover item inexistente: {nome}")
-                    
-    return lista
+                lista_remocoes.append(nome)
+    
+    # 2. Aplica as remoções no final
+    for nome_remocao in lista_remocoes:
+        if nome_remocao in lista_adicoes:
+            del lista_adicoes[nome_remocao]
+            print(f"   [OK] Removido: {nome_remocao}")
+            
+    return lista_adicoes
 
 def buscar_promocoes():
     client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
