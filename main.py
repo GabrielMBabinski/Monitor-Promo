@@ -19,33 +19,44 @@ def enviar_msg_bot(meu_id, texto):
     urllib.request.urlopen(url)
 
 def carregar_lista_desejos(client):
-    lista_adicoes = {} # Guarda tudo o que foi adicionado
-    lista_remocoes = [] # Guarda tudo o que foi pedido para remover
+    lista_final = {}
+    itens_processados = set() # Memória do que o script já resolveu
     
     meu_id = client.get_me().id
-    print(f"Buscando comandos no chat privado com ID: {meu_id}")
+    print(f"Buscando comandos no histórico do chat...")
     
-    # 1. Lê tudo o que está no chat
-    for msg in client.iter_messages('Monitordepromos99_bot', limit=50): 
+    # Lê as últimas 200 mensagens (da mais NOVA para a mais VELHA)
+    for msg in client.iter_messages('Monitordepromos99_bot', limit=200): 
         if msg.text:
             txt = msg.text.lower()
+            
+            # Se for um comando de ADICIONAR
             if txt.startswith('/add'):
                 partes = txt.split()
                 if len(partes) >= 3:
-                    preco = float(partes[-1])
-                    nome = " ".join(partes[1:-1])
-                    lista_adicoes[nome] = preco
+                    try:
+                        preco = float(partes[-1])
+                        nome = " ".join(partes[1:-1]).strip()
+                        
+                        # Se é a primeira vez que vemos esse item (ou seja, é a ordem mais recente sua)
+                        if nome not in itens_processados:
+                            lista_final[nome] = preco
+                            itens_processados.add(nome) # Marca que já sabemos o destino desse item
+                            print(f"   [ATIVO] Monitorando: {nome} por R$ {preco}")
+                    except ValueError:
+                        continue
+            
+            # Se for um comando de REMOVER
             elif txt.startswith('/remove'):
                 nome = txt.replace('/remove', '').strip()
-                lista_remocoes.append(nome)
-    
-    # 2. Aplica as remoções no final
-    for nome_remocao in lista_remocoes:
-        if nome_remocao in lista_adicoes:
-            del lista_adicoes[nome_remocao]
-            print(f"   [OK] Removido: {nome_remocao}")
-            
-    return lista_adicoes
+                
+                # Se achamos um remover ANTES de achar um adicionar (lendo do presente pro passado), 
+                # significa que sua decisão mais recente foi deletar esse item!
+                if nome not in itens_processados:
+                    itens_processados.add(nome) # Bloqueia qualquer /add antigo desse item
+                    print(f"   [REMOVIDO/IGNORADO] Item: {nome}")
+                    
+    return lista_final
 
 def buscar_promocoes():
     client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
@@ -58,7 +69,7 @@ def buscar_promocoes():
         nao_encontrados = list(meus_produtos.keys())
         
         if not meus_produtos:
-            enviar_msg_bot(meu_id, "⚠️ Lista vazia! Use /add nome preco.")
+            enviar_msg_bot(meu_id, "⚠️ Sua lista está vazia! Mande um comando como:\n`/add playstation 5 3200`")
             return
 
         tempo_limite = datetime.now(timezone.utc) - timedelta(hours=10)
@@ -71,7 +82,7 @@ def buscar_promocoes():
             
             for produto, preco_max in meus_produtos.items():
                 if produto in texto_msg:
-                    # Se encontrou o produto, remove da lista de "não encontrados"
+                    # Registra no relatório que achou o item na varredura
                     if produto in nao_encontrados:
                         nao_encontrados.remove(produto)
                     if produto not in encontrados:
@@ -83,12 +94,15 @@ def buscar_promocoes():
                         
                         if menor_preco <= preco_max:
                             link = re.search(r'(https?://[^\s]+)', message.text)
-                            link_txt = link.group(1) if link else "Link não encontrado."
+                            link_txt = link.group(1) if link else "Link não encontrado na mensagem."
                             alerta = f"🚨 **Preço Atingido!**\n\n**Produto:** {produto} por R$ {menor_preco:.2f}\n🔗 {link_txt}"
                             enviar_msg_bot(meu_id, alerta)
 
         # --- ENVIO DO RELATÓRIO FINAL ---
-        relatorio = f"📊 **Relatório da Rodada:**\n\n✅ *Encontrados:* {', '.join(encontrados) if encontrados else 'Nenhum'}\n❌ *Não encontrados:* {', '.join(nao_encontrados) if nao_encontrados else 'Nenhum'}"
+        texto_encontrados = ', '.join(encontrados) if encontrados else 'Nenhum'
+        texto_nao_encontrados = ', '.join(nao_encontrados) if nao_encontrados else 'Nenhum'
+        
+        relatorio = f"📊 **Relatório da Rodada:**\n\n✅ *Encontrados no grupo:* {texto_encontrados}\n❌ *Não encontrados no grupo:* {texto_nao_encontrados}"
         enviar_msg_bot(meu_id, relatorio)
         
 if __name__ == '__main__':
