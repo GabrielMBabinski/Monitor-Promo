@@ -95,7 +95,7 @@ def buscar_promocoes():
                             if produto not in encontrados:
                                 encontrados.append(produto)
                                 
-                            precos = re.findall(r'r\$\s*(\d{1,3}(?:\.\d{3})*(?:,\d{2})?|\d+)', texto_msg)
+                            precos = re.findall(r'r\$\s*(\d+(?:\.\d+)*(?:,\d+)?)', texto_msg)
                             if precos:
                                 menor_preco = min([float(p.replace('.', '').replace(',', '.')) for p in precos])
                                 
