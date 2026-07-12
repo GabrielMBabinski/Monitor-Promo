@@ -57,8 +57,12 @@ def buscar_promocoes():
         meu_id = client.get_me().id
         meus_produtos = carregar_lista_desejos(client)
         
+        # --- LISTAS PARA O RELATÓRIO ---
+        encontrados = []
+        nao_encontrados = list(meus_produtos.keys())
+        
         if not meus_produtos:
-            enviar_msg_bot(meu_id, "⚠️ Lista vazia! Use /add nome preco no chat do bot.")
+            enviar_msg_bot(meu_id, "⚠️ Lista vazia! Use /add nome preco.")
             return
 
         tempo_limite = datetime.now(timezone.utc) - timedelta(hours=10)
@@ -71,6 +75,12 @@ def buscar_promocoes():
             
             for produto, preco_max in meus_produtos.items():
                 if produto in texto_msg:
+                    # Se encontrou o produto, remove da lista de "não encontrados"
+                    if produto in nao_encontrados:
+                        nao_encontrados.remove(produto)
+                    if produto not in encontrados:
+                        encontrados.append(produto)
+                        
                     precos = re.findall(r'r\$\s*(\d{1,3}(?:\.\d{3})*(?:,\d{2})?|\d+)', texto_msg)
                     if precos:
                         menor_preco = min([float(p.replace('.', '').replace(',', '.')) for p in precos])
@@ -78,9 +88,12 @@ def buscar_promocoes():
                         if menor_preco <= preco_max:
                             link = re.search(r'(https?://[^\s]+)', message.text)
                             link_txt = link.group(1) if link else "Link não encontrado."
-                            
                             alerta = f"🚨 **Preço Atingido!**\n\n**Produto:** {produto} por R$ {menor_preco:.2f}\n🔗 {link_txt}"
                             enviar_msg_bot(meu_id, alerta)
 
+        # --- ENVIO DO RELATÓRIO FINAL ---
+        relatorio = f"📊 **Relatório da Rodada:**\n\n✅ *Encontrados:* {', '.join(encontrados) if encontrados else 'Nenhum'}\n❌ *Não encontrados:* {', '.join(nao_encontrados) if nao_encontrados else 'Nenhum'}"
+        enviar_msg_bot(meu_id, relatorio)
+        
 if __name__ == '__main__':
     buscar_promocoes()
