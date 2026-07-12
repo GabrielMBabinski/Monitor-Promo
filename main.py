@@ -23,11 +23,12 @@ def carregar_lista_desejos(client):
     meu_id = client.get_me().id
     print(f"Buscando comandos no chat privado com ID: {meu_id}")
     
-    # O bot lê o histórico do chat privado com VOCÊ (meu_id)
+    # Lemos do mais antigo para o mais recente para que o /remove 
+    # ocorra depois do /add na cronologia da lista
     for msg in client.iter_messages('Monitordepromos99_bot', limit=50): 
         if msg.text:
-            print(f"-> Leu mensagem: '{msg.text}'") # Isso vai aparecer no log do GitHub
             txt = msg.text.lower()
+            
             if txt.startswith('/add'):
                 partes = txt.split()
                 if len(partes) >= 3:
@@ -38,6 +39,16 @@ def carregar_lista_desejos(client):
                         print(f"   [OK] Adicionado: {nome} por {preco}")
                     except ValueError:
                         print("   [ERRO] Preço inválido.")
+            
+            # LÓGICA DE REMOÇÃO
+            elif txt.startswith('/remove'):
+                nome = txt.replace('/remove', '').strip()
+                if nome in lista:
+                    del lista[nome]
+                    print(f"   [OK] Removido: {nome}")
+                else:
+                    print(f"   [AVISO] Tentativa de remover item inexistente: {nome}")
+                    
     return lista
 
 def buscar_promocoes():
