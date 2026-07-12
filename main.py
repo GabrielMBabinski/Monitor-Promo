@@ -110,11 +110,11 @@ def buscar_promocoes():
                 print(f"Não foi possível ler o grupo {grupo}. Verifique se o nome está correto ou se você participa dele. Erro: {e}")
 
         # --- ENVIO DO RELATÓRIO FINAL ---
-        texto_encontrados = ', '.join(encontrados) if encontrados else 'Nenhum'
-        texto_nao_encontrados = ', '.join(nao_encontrados) if nao_encontrados else 'Nenhum'
+        #texto_encontrados = ', '.join(encontrados) if encontrados else 'Nenhum'
+        #texto_nao_encontrados = ', '.join(nao_encontrados) if nao_encontrados else 'Nenhum'
         
-        relatorio = f"📊 **Relatório da Rodada:**\n\n✅ *Encontrados na busca:* {texto_encontrados}\n❌ *Não encontrados:* {texto_nao_encontrados}"
-        enviar_msg_bot(meu_id, relatorio)
+        #relatorio = f"📊 **Relatório da Rodada:**\n\n✅ *Encontrados na busca:* {texto_encontrados}\n❌ *Não encontrados:* {texto_nao_encontrados}"
+        #enviar_msg_bot(meu_id, relatorio)
         
 if __name__ == '__main__':
     buscar_promocoes()
