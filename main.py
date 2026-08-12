@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import urllib.request
 import urllib.parse
 from datetime import datetime, timedelta, timezone
@@ -12,13 +13,15 @@ API_HASH = os.environ['API_HASH']
 SESSION_STRING = os.environ['SESSION_STRING']
 BOT_TOKEN = os.environ['BOT_TOKEN']
 
-# Grupos base (Grupos fixos que sempre serão lidos, a menos que você os remova pelo chat)
+# Nome do arquivo que vai servir como nosso "Banco de Dados"
+ARQUIVO_DADOS = 'dados_bot.json'
+
+# Grupos iniciais padrão
 GRUPOS_BASE = [
     'PoisonPromos',
     'Fraguas84Oficial',
     'tecnoarthardware',
-    'gamerbrasilpromos',
-    'OQMDVPROMO'
+    'gamerbrasilpromos'
 ]
 
 def enviar_msg_bot(meu_id, texto):
@@ -29,78 +32,93 @@ def enviar_msg_bot(meu_id, texto):
     except Exception as e:
         print(f"Erro ao enviar mensagem para o bot: {e}")
 
-def carregar_lista_desejos(client):
-    lista_final = {}
-    itens_processados = set() 
+def carregar_dados():
+    """Lê o arquivo JSON. Se não existir, cria a estrutura básica."""
+    if os.path.exists(ARQUIVO_DADOS):
+        with open(ARQUIVO_DADOS, 'r', encoding='utf-8') as f:
+            return json.load(f)
     
-    print("Buscando comandos de produtos no histórico do chat...")
+    # Estrutura padrão para a primeira vez que o bot rodar
+    return {
+        "ultima_mensagem_id": 0,
+        "produtos": {},
+        "grupos": GRUPOS_BASE
+    }
+
+def salvar_dados(dados):
+    """Salva as alterações permanentemente no arquivo JSON."""
+    with open(ARQUIVO_DADOS, 'w', encoding='utf-8') as f:
+        json.dump(dados, f, indent=4, ensure_ascii=False)
+
+def atualizar_banco_pelo_chat(client, dados):
+    """Lê APENAS as mensagens novas e atualiza o JSON."""
+    ultimo_id = dados.get("ultima_mensagem_id", 0)
+    novas_mensagens = []
     
-    # Aumentado para 1000 para não esquecer os comandos antigos
-    for msg in client.iter_messages('Monitordepromos99_bot', limit=1000): 
+    # Puxa apenas mensagens com ID maior que a última lida
+    for msg in client.iter_messages('Monitordepromos99_bot', min_id=ultimo_id):
+        novas_mensagens.append(msg)
+        
+    if not novas_mensagens:
+        return dados # Nenhuma novidade no chat
+        
+    # Inverte a lista para processar da mais antiga para a mais recente
+    # (Garante que se você mandar /add e depois /remove, o remove funcione)
+    novas_mensagens.reverse()
+    
+    for msg in novas_mensagens:
         if msg.text:
             txt = msg.text.lower()
             
-            # Espaço adicionado para não confundir com /addgrupo
             if txt.startswith('/add '):
                 partes = txt.split()
                 if len(partes) >= 3:
                     try:
                         preco = float(partes[-1])
                         nome = " ".join(partes[1:-1]).strip()
-                        
-                        if nome not in itens_processados:
-                            lista_final[nome] = preco
-                            itens_processados.add(nome) 
-                            print(f"   [ATIVO] Monitorando: {nome} por R$ {preco}")
+                        dados["produtos"][nome] = preco
+                        print(f"✅ Salvo no JSON: {nome} (R$ {preco})")
                     except ValueError:
                         continue
-            
+                        
             elif txt.startswith('/remove '):
                 nome = txt.replace('/remove ', '').strip()
-                if nome not in itens_processados:
-                    itens_processados.add(nome) 
-                    print(f"   [REMOVIDO/IGNORADO] Item: {nome}")
+                if nome in dados["produtos"]:
+                    del dados["produtos"][nome]
+                    print(f"🗑️ Removido do JSON: {nome}")
                     
-    return lista_final
-
-def carregar_lista_grupos(client):
-    grupos_finais = set(GRUPOS_BASE)
-    grupos_processados = set()
-
-    print("Buscando comandos de grupos no histórico do chat...")
-    
-    # Aumentado para 1000 para não esquecer os comandos antigos
-    for msg in client.iter_messages('Monitordepromos99_bot', limit=1000):
-        if msg.text:
-            txt = msg.text.lower()
-            
-            if txt.startswith('/addgrupo '):
-                # Limpa o comando e remove o '@' se você digitar
+            elif txt.startswith('/addgrupo '):
                 nome = txt.replace('/addgrupo ', '').strip().replace('@', '')
-                if nome not in grupos_processados:
-                    grupos_finais.add(nome)
-                    grupos_processados.add(nome)
-                    print(f"   [GRUPO ADICIONADO] {nome}")
+                if nome not in dados["grupos"]:
+                    dados["grupos"].append(nome)
+                    print(f"✅ Grupo Salvo no JSON: {nome}")
                     
             elif txt.startswith('/removegrupo '):
                 nome = txt.replace('/removegrupo ', '').strip().replace('@', '')
-                if nome not in grupos_processados:
-                    if nome in grupos_finais:
-                        grupos_finais.remove(nome)
-                    grupos_processados.add(nome)
-                    print(f"   [GRUPO REMOVIDO] {nome}")
+                if nome in dados["grupos"]:
+                    dados["grupos"].remove(nome)
+                    print(f"🗑️ Grupo Removido do JSON: {nome}")
 
-    return list(grupos_finais)
+        # Atualiza o "marcador" de leitura
+        if msg.id > dados["ultima_mensagem_id"]:
+            dados["ultima_mensagem_id"] = msg.id
+
+    return dados
 
 def buscar_promocoes():
+    # 1. Carrega o banco de dados permanente
+    dados_salvos = carregar_dados()
+    
     client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
     with client:
         meu_id = client.get_me().id
-        meus_produtos = carregar_lista_desejos(client)
-        meus_grupos = carregar_lista_grupos(client)
         
-        encontrados = []
-        nao_encontrados = list(meus_produtos.keys())
+        # 2. Atualiza o banco de dados se houver mensagens novas no chat
+        dados_atualizados = atualizar_banco_pelo_chat(client, dados_salvos)
+        salvar_dados(dados_atualizados) # Salva no disco
+        
+        meus_produtos = dados_atualizados["produtos"]
+        meus_grupos = dados_atualizados["grupos"]
         
         if not meus_produtos:
             enviar_msg_bot(meu_id, "⚠️ Sua lista de produtos está vazia! Mande:\n`/add playstation 5 3200`")
@@ -110,9 +128,11 @@ def buscar_promocoes():
             enviar_msg_bot(meu_id, "⚠️ Sua lista de grupos está vazia! Mande:\n`/addgrupo @nome_do_grupo`")
             return
 
+        encontrados = []
+        nao_encontrados = list(meus_produtos.keys())
         tempo_limite = datetime.now(timezone.utc) - timedelta(hours=10)
         
-        # Agora itera sobre a lista dinâmica de grupos
+        # 3. Faz a varredura normal nas promoções
         for grupo in meus_grupos:
             print(f"Vasculhando o grupo: {grupo}")
             try:
