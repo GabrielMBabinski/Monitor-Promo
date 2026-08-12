@@ -12,15 +12,13 @@ API_HASH = os.environ['API_HASH']
 SESSION_STRING = os.environ['SESSION_STRING']
 BOT_TOKEN = os.environ['BOT_TOKEN']
 
-# --- AQUI VOCÊ ADICIONA OS GRUPOS ---
-# Coloque o @username de cada grupo ou ID. Sempre entre aspas e separados por vírgula.
-GRUPOS_ALVO = [
+# Grupos base (Grupos fixos que sempre serão lidos, a menos que você os remova pelo chat)
+GRUPOS_BASE = [
     'PoisonPromos',
-    'Fraguas84Oficial',    # Substitua pelo username do outro grupo
+    'Fraguas84Oficial',
     'tecnoarthardware',
-    'gamerbrasilpromos'# Substitua por outro
+    'gamerbrasilpromos'
 ]
-# ------------------------------------
 
 def enviar_msg_bot(meu_id, texto):
     texto_formatado = urllib.parse.quote(texto)
@@ -34,14 +32,15 @@ def carregar_lista_desejos(client):
     lista_final = {}
     itens_processados = set() 
     
-    meu_id = client.get_me().id
-    print(f"Buscando comandos no histórico do chat...")
+    print("Buscando comandos de produtos no histórico do chat...")
     
-    for msg in client.iter_messages('Monitordepromos99_bot', limit=200): 
+    # Aumentado para 1000 para não esquecer os comandos antigos
+    for msg in client.iter_messages('Monitordepromos99_bot', limit=1000): 
         if msg.text:
             txt = msg.text.lower()
             
-            if txt.startswith('/add'):
+            # Espaço adicionado para não confundir com /addgrupo
+            if txt.startswith('/add '):
                 partes = txt.split()
                 if len(partes) >= 3:
                     try:
@@ -55,31 +54,65 @@ def carregar_lista_desejos(client):
                     except ValueError:
                         continue
             
-            elif txt.startswith('/remove'):
-                nome = txt.replace('/remove', '').strip()
+            elif txt.startswith('/remove '):
+                nome = txt.replace('/remove ', '').strip()
                 if nome not in itens_processados:
                     itens_processados.add(nome) 
                     print(f"   [REMOVIDO/IGNORADO] Item: {nome}")
                     
     return lista_final
 
+def carregar_lista_grupos(client):
+    grupos_finais = set(GRUPOS_BASE)
+    grupos_processados = set()
+
+    print("Buscando comandos de grupos no histórico do chat...")
+    
+    # Aumentado para 1000 para não esquecer os comandos antigos
+    for msg in client.iter_messages('Monitordepromos99_bot', limit=1000):
+        if msg.text:
+            txt = msg.text.lower()
+            
+            if txt.startswith('/addgrupo '):
+                # Limpa o comando e remove o '@' se você digitar
+                nome = txt.replace('/addgrupo ', '').strip().replace('@', '')
+                if nome not in grupos_processados:
+                    grupos_finais.add(nome)
+                    grupos_processados.add(nome)
+                    print(f"   [GRUPO ADICIONADO] {nome}")
+                    
+            elif txt.startswith('/removegrupo '):
+                nome = txt.replace('/removegrupo ', '').strip().replace('@', '')
+                if nome not in grupos_processados:
+                    if nome in grupos_finais:
+                        grupos_finais.remove(nome)
+                    grupos_processados.add(nome)
+                    print(f"   [GRUPO REMOVIDO] {nome}")
+
+    return list(grupos_finais)
+
 def buscar_promocoes():
     client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
     with client:
         meu_id = client.get_me().id
         meus_produtos = carregar_lista_desejos(client)
+        meus_grupos = carregar_lista_grupos(client)
         
         encontrados = []
         nao_encontrados = list(meus_produtos.keys())
         
         if not meus_produtos:
-            enviar_msg_bot(meu_id, "⚠️ Sua lista está vazia! Mande um comando como:\n`/add playstation 5 3200`")
+            enviar_msg_bot(meu_id, "⚠️ Sua lista de produtos está vazia! Mande:\n`/add playstation 5 3200`")
+            return
+            
+        if not meus_grupos:
+            enviar_msg_bot(meu_id, "⚠️ Sua lista de grupos está vazia! Mande:\n`/addgrupo @nome_do_grupo`")
             return
 
         tempo_limite = datetime.now(timezone.utc) - timedelta(hours=10)
         
-        # O script agora varre cada grupo da sua lista
-        for grupo in GRUPOS_ALVO:
+        # Agora itera sobre a lista dinâmica de grupos
+        for grupo in meus_grupos:
             print(f"Vasculhando o grupo: {grupo}")
             try:
                 for message in client.iter_messages(grupo, limit=30):
@@ -103,18 +136,10 @@ def buscar_promocoes():
                                     link = re.search(r'(https?://[^\s]+)', message.text)
                                     link_txt = link.group(1) if link else "Link não encontrado na mensagem."
                                     
-                                    # Alerta atualizado mostrando de qual grupo veio
                                     alerta = f"🚨 **Preço Atingido!**\n\n**Produto:** {produto} por R$ {menor_preco:.2f}\n📦 **Grupo:** {grupo}\n🔗 {link_txt}"
                                     enviar_msg_bot(meu_id, alerta)
             except Exception as e:
                 print(f"Não foi possível ler o grupo {grupo}. Verifique se o nome está correto ou se você participa dele. Erro: {e}")
 
-        # --- ENVIO DO RELATÓRIO FINAL ---
-        #texto_encontrados = ', '.join(encontrados) if encontrados else 'Nenhum'
-        #texto_nao_encontrados = ', '.join(nao_encontrados) if nao_encontrados else 'Nenhum'
-        
-        #relatorio = f"📊 **Relatório da Rodada:**\n\n✅ *Encontrados na busca:* {texto_encontrados}\n❌ *Não encontrados:* {texto_nao_encontrados}"
-        #enviar_msg_bot(meu_id, relatorio)
-        
 if __name__ == '__main__':
     buscar_promocoes()
