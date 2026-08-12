@@ -17,7 +17,8 @@ GRUPOS_BASE = [
     'PoisonPromos',
     'Fraguas84Oficial',
     'tecnoarthardware',
-    'gamerbrasilpromos'
+    'gamerbrasilpromos',
+    'OQMDVPROMO'
 ]
 
 def enviar_msg_bot(meu_id, texto):
