@@ -158,7 +158,7 @@ def buscar_promocoes():
                                     link_txt = link.group(1) if link else "Link não encontrado na mensagem."
                                     
                                     alerta = f"🚨 **Preço Atingido!**\n\n**Produto:** {produto} por R$ {menor_preco:.2f}\n📦 **Grupo:** {grupo}\n🔗 {link_txt}"
-                                    enviar_msg_bot(meu_id, alerta)
+                                    enviar_msg_bot("-4362764481", alerta)
             except Exception as e:
                 print(f"Não foi possível ler o grupo {grupo}. Verifique se o nome está correto ou se você participa dele. Erro: {e}")
 
