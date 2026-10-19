@@ -130,7 +130,7 @@ def buscar_promocoes():
 
         encontrados = []
         nao_encontrados = list(meus_produtos.keys())
-        tempo_limite = datetime.now(timezone.utc) - timedelta(hours=10)
+        tempo_limite = datetime.now(timezone.utc) - timedelta(hours=2)
         
         # 3. Faz a varredura normal nas promoções
         for grupo in meus_grupos:
